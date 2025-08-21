@@ -11,7 +11,6 @@ import org.example.hotelerd.controller.hotel.dto.HotelDetailResponseDto;
 import org.example.hotelerd.controller.hotel.dto.RoomAvailabilityInfoDto;
 import org.example.hotelerd.repository.hotel.HotelRepository;
 import org.example.hotelerd.repository.hotel.RoomDatePriceRepository;
-import org.example.hotelerd.repository.hotel.RoomTypeRepository;
 import org.example.hotelerd.repository.hotel.entity.Hotel;
 import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
@@ -25,7 +24,6 @@ import org.springframework.transaction.annotation.Transactional;
 public class HotelService {
 
     HotelRepository hotelRepository;
-    RoomTypeRepository roomTypeRepository;
     RoomDatePriceRepository roomDatePriceRepository;
 
     @Transactional(readOnly = true)
@@ -34,13 +32,9 @@ public class HotelService {
 
         Hotel hotel = hotelRepository.findById(hotelId)
             .orElseThrow(() -> new RuntimeException("호텔을 찾을 수 없습니다. hotelId: " + hotelId));
-        log.info("호텔 조회 완료:");
-        log.info("  - 호텔 ID: {}", hotel.getId());
-        log.info("  - 호텔명: {}", hotel.getName());
-        log.info("  - 주소: {}", hotel.getAddress());
-        log.info("  - 체크인: {}, 체크아웃: {}", hotel.getCheckInTime(), hotel.getCheckOutTime());
+        log.info("호텔 조회 완료:   - 호텔 ID: {} - 호텔명: {}", hotel.getId(), hotel.getName());
 
-        List<RoomType> roomTypes = roomTypeRepository.findByHotelId(hotelId);
+        List<RoomType> roomTypes = hotel.getRoomTypes();
         for (int i = 0; i < roomTypes.size(); i++) {
             RoomType rt = roomTypes.get(i);
             log.info("  객실타입[{}]: ID={}, 타입={}, 설명={}",
@@ -55,22 +49,14 @@ public class HotelService {
             roomTypeIds, checkDate);
 
         log.info("RoomDatePrice 리스트 ({} 개):", roomDatePrices.size());
-        List<RoomAvailabilityInfoDto> roomAvailabilityInfoDtos = roomTypes.stream()
-            .map(roomType -> {
-                Integer roomTypeId = roomType.getId();
-                RoomDatePrice roomDatePrice = roomDatePrices.stream()
-                    .filter(rdp -> rdp.getRoomType().getId().equals(roomTypeId))
-                    .findFirst()
-                    .orElse(null);
-
-                if (roomDatePrice == null) {
-                    log.debug("객실타입 {}에 대한 가격정보가 없어 제외됩니다", roomType.getType());
-                    return null; // null 반환
+        List<RoomAvailabilityInfoDto> roomAvailabilityInfoDtos = roomDatePrices.stream()
+            .map(room -> {
+                if (room.getQuantity() == 0) {
+                    return RoomAvailabilityInfoDto.unavailable(room.getRoomType());
+                } else {
+                    return RoomAvailabilityInfoDto.available(room.getRoomType(), room);
                 }
-
-                return RoomAvailabilityInfoDto.of(roomType, roomDatePrice);
             })
-            .filter(dto -> dto != null) // null 필터링
             .toList();
         return HotelDetailResponseDto.from(
             hotel,
