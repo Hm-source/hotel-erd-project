@@ -39,7 +39,9 @@ public class HotelService {
 
     @Transactional(readOnly = true)
     public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate) {
-        List<Hotel> hotels = hotelRepository.findAll();
+    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Hotel> hotels = hotelRepository.findAll(pageable).getContent();
 
         return hotels.stream()
                 .map(hotel -> {
