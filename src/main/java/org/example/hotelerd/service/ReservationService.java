@@ -18,7 +18,7 @@ public class ReservationService {
         User user = userRepository.findById(requestDto.userId())
                 .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없음" + requestDto.userId()));
         RoomType roomType = roomTypeRepository.findById(requestDto.roomTypeId())
-                .orElseThrow(() -> new EntityNotFoundException("해該 객실 타입을 찾을 수 없음." + requestDto.roomTypeId()));
+                .orElseThrow(() -> new EntityNotFoundException("해당 객실 타입을 찾을 수 없음." + requestDto.roomTypeId()));
 
         // 해당 날짜의 객실 재고 정보 조회 및 확인
         RoomDatePrice roomInventory = roomDatePriceRepository.findByRoomTypeAndDate(roomType, requestDto.stayDate())
