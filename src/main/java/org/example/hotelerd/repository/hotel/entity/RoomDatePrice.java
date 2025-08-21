@@ -40,4 +40,8 @@ public class RoomDatePrice {
     private LocalDate dateAvailable;
     private Integer price;
     private Integer quantity;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "season_id")
+    private Season season;
 }
