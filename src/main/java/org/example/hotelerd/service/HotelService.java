@@ -20,6 +20,7 @@ import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -34,25 +35,9 @@ public class HotelService {
 
 
     @Transactional(readOnly = true)
-    public HotelSimpleResponseDto getHotelInfo(Integer hotelId, LocalDate checkDate){
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() ->
-                new RuntimeException("호텔 ID:" + hotelId + "가 존재하지 않습니다."));
-
-        Optional<RoomDatePrice> cheapestRoomDatePrice = roomDatePriceRepository.findCheapestAvailableRoom(hotelId);
-
-        Integer cheapestRoomPrice = null;
-        String cheapRoomTypeName = null;
-
-        if (cheapestRoomDatePrice.isPresent()) {
-            // roomType 객체를 얻고, 그 객체에서 ID와 이름을 가져옴
-            RoomType roomType = cheapestRoomDatePrice.get().getRoomType();
-
-            cheapestRoomPrice = cheapestRoomDatePrice.get().getPrice();
-            cheapRoomTypeName = roomType.getType();
-
-        }
-
-        return HotelSimpleResponseDto.from(hotel, checkDate, cheapestRoomPrice, cheapRoomTypeName);
+    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return roomDatePriceRepository.findAllCheapestHotelInfo(checkDate, pageable);
     }
 
 
