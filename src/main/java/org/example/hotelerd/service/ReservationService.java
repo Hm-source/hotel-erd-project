@@ -1,9 +1,11 @@
 package org.example.hotelerd.service;
 
+import java.time.LocalDate;
 import java.util.NoSuchElementException;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.example.hotelerd.controller.reservation.dto.ReservationCancelResponseDto;
 import org.example.hotelerd.controller.reservation.dto.ReservationRequestDto;
 import org.example.hotelerd.controller.reservation.dto.ReservationResponseDto;
 import org.example.hotelerd.repository.hotel.RoomDatePriceRepository;
@@ -68,6 +70,41 @@ public class ReservationService {
         return ReservationResponseDto.from(reservation);
     }
 
+    @Transactional
+    public ReservationCancelResponseDto cancelReservation(Integer reservationId, Integer userId) {
+        Reservations reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(
+                () -> new NoSuchElementException("해당 예약을 찾을 수 없습니다. 예약ID: " + reservationId));
+
+        Users user = userRepository.findById(userId)
+            .orElseThrow(() -> new NoSuchElementException("해당 사용자를 찾을 수 없습니다. userId : " + userId));
+
+        if (!reservation.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("해당 예약을 취소할 권한이 없습니다.");
+        }
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new IllegalStateException("이미 취소된 예약입니다.");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate reservationDate = reservation.getRoomDatePrice().getDateAvailable();
+
+        if (reservationDate.isBefore(today) || reservationDate.isEqual(today)) {
+            throw new IllegalStateException("당일 또는 지난 예약은 취소할 수 없습니다.");
+        }
+
+        RoomDatePrice roomDatePrice = roomDatePriceRepository
+            .findByRoomTypeIdAndDateAvailableWithLock(
+                reservation.getRoomType().getId(),
+                reservationDate)
+            .orElseThrow(() -> new NoSuchElementException("재고 정보를 찾을 수 없습니다."));
+
+        reservation.cancel();
+        roomDatePrice.increaseQuantity();
+
+        return ReservationCancelResponseDto.from(reservation);
+    }
 
     private Integer calculateTotalPrice(RoomDatePrice roomInventory) {
         Integer basePrice = roomInventory.getPrice();
