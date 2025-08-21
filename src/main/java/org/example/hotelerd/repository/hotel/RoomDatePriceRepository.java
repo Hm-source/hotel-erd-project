@@ -24,6 +24,12 @@ public interface RoomDatePriceRepository extends JpaRepository<RoomDatePrice, In
         @Param("dateAvailable") LocalDate dateAvailable
     );
 
-    @Query("SELECT r FROM RoomDatePrice r WHERE r.quantity > 0 AND r.roomType.hotel.id = :hotelId ORDER BY r.price ASC LIMIT 1")
-    Optional<RoomDatePrice> findCheapestAvailableRoom(@Param("hotelId") Integer hotelId);
+    @Query("SELECT new org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto(" +
+           "h.name, :checkDate, MIN(rdp.price), rt.type) " +
+           "FROM RoomDatePrice rdp " +
+           "JOIN rdp.roomType rt " +
+           "JOIN rt.hotel h " +
+           "WHERE rdp.dateAvailable = :checkDate AND rdp.quantity > 0 " +
+           "GROUP BY h.id, h.name, rt.type")
+    List<HotelSimpleResponseDto> findAllCheapestHotelInfo(@Param("checkDate") LocalDate checkDate);
 }
