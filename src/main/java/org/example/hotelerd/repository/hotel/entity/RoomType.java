@@ -19,6 +19,7 @@ import lombok.ToString;
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class RoomType {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
@@ -27,4 +28,6 @@ public class RoomType {
     @JoinColumn(name = "hotel_id", nullable = false)
     private Hotel hotel;
     private String description;
+    private Integer standardNum;
+    private Integer maxNum;
 }
