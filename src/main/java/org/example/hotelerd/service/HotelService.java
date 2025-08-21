@@ -39,7 +39,7 @@ public class HotelService {
 
 
     @Transactional(readOnly = true)
-    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
+    public Page<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return roomDatePriceRepository.findAllCheapestHotelInfo(checkDate, pageable);
     }
