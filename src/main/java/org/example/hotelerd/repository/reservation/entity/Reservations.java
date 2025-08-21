@@ -59,4 +59,8 @@ public class Reservations {
 
     private Integer numOfGuests;
     private String specialRequests;
+
+    public void cancel() {
+        this.status = ReservationStatus.CANCELLED;
+    }
 }
