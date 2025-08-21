@@ -39,7 +39,7 @@ public class ReservationService {
                 .room(null)         // 방은 아직 배정 되지 않아서 null
                 .checkIn(requestDto.stayDate())
                 .checkOut(requestDto.stayDate().plusDays(1))
-                .status(ReservationStatus.CONFIRMED)
+                .status(ReservationStatus.CONFIRMED.name())
                 .totalPrice(roomInventory.getPrice().intValue())
                 .build();
         reservationRepository.save(newReservation);
