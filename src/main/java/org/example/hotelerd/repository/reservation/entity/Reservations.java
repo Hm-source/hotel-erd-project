@@ -1,11 +1,24 @@
-package org.example.hotelerd.repository.entity;
+package org.example.hotelerd.repository.reservation.entity;
 
-import org.example.hotelerd.repository.room.entity.Room;
-import org.example.hotelerd.repository.room.entity.RoomType;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import org.example.hotelerd.repository.hotel.entity.Room;
+import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.example.hotelerd.repository.user.entity.Users;
-import jakarta.persistence.*;
-import lombok.*;
-import java.time.LocalDate;
 
 @Entity
 @Getter
@@ -16,7 +29,7 @@ public class Reservations {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long reservationId;
+    private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -33,15 +46,11 @@ public class Reservations {
     private Room room;
 
     @Column(nullable = false)
-    private LocalDate checkIn;
-
-    @Column(nullable = false)
-    private LocalDate checkOut;
-
-    @Column(nullable = false)
     private Integer totalPrice;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private ReservationStatus status;
+    
     private Integer numOfGuests;
     private String specialRequests;
 }
