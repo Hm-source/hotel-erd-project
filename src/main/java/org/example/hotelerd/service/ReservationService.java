@@ -33,7 +33,7 @@ public class ReservationService {
         roomDatePriceRepository.save(roomInventory);
 
         // 예약 정보
-        Reservation newReservation = Reservation.builder()
+        Reservations newReservation = Reservations.builder()
                 .user(user)
                 .roomType(roomType)
                 .room(null)         // 방은 아직 배정 되지 않아서 null
