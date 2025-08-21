@@ -9,6 +9,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 
 @Repository
 public interface RoomDatePriceRepository extends JpaRepository<RoomDatePrice, Integer> {
@@ -25,21 +29,12 @@ public interface RoomDatePriceRepository extends JpaRepository<RoomDatePrice, In
     );
 
     @Query("SELECT new org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto(" +
-           "h.name, :checkDate, MIN(rdp.price), rt.type) " +
-           "FROM RoomDatePrice rdp " +
-           "JOIN rdp.roomType rt " +
-           "JOIN rt.hotel h " +
-           "WHERE rdp.dateAvailable = :checkDate AND rdp.quantity > 0 " +
-           "h.name, :checkDate, rdp.price, rt.type) " +
-           "FROM RoomDatePrice rdp " +
-           "JOIN rdp.roomType rt " +
-           "JOIN rt.hotel h " +
-           "WHERE rdp.dateAvailable = :checkDate AND rdp.quantity > 0 " +
-           "AND rdp.price = (" +
-           "    SELECT MIN(rdp2.price) FROM RoomDatePrice rdp2 " +
-           "    JOIN rdp2.roomType rt2 " +
-           "    JOIN rt2.hotel h2 " +
-           "    WHERE h2.id = h.id AND rdp2.dateAvailable = :checkDate AND rdp2.quantity > 0" +
-           ")")
-    List<HotelSimpleResponseDto> findAllCheapestHotelInfo(@Param("checkDate") LocalDate checkDate);
+            "h.name, :checkDate, MIN(rdp.price), rt.type) " +
+            "FROM RoomDatePrice rdp " +
+            "JOIN rdp.roomType rt " +
+            "JOIN rt.hotel h " +
+            "WHERE rdp.dateAvailable = :checkDate AND rdp.quantity > 0 " +
+            "GROUP BY h.id, h.name, rt.type " +
+            "ORDER BY h.id")
+    Page<HotelSimpleResponseDto> findAllCheapestHotelInfo(@Param("checkDate") LocalDate checkDate, Pageable pageable);
 }
