@@ -7,7 +7,6 @@ import org.example.hotelerd.repository.hotel.entity.Hotel;
 import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
 
-import java.awt.*;
 import java.time.LocalDate;
 
 
