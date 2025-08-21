@@ -1,18 +1,19 @@
 package org.example.hotelerd.controller.reservation.dto;
 
 
-import lombok.AccessLevel;
+import java.time.LocalDate;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.experimental.FieldDefaults;
-
-import java.time.LocalDate;
 
 @Getter
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
-@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
+@AllArgsConstructor
 public class ReservationRequestDto {
-    LocalDate stayDate;
-    Long roomTypeId;
-    Long userId;
+
+    private LocalDate stayDate;
+    private Integer hotelId;
+    private Integer roomTypeId;
+    private Integer userId;
+    private Integer numOfGuests;
+    private String specialRequests;
+    
 }
