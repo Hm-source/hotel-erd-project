@@ -33,9 +33,12 @@ public class HotelController {
             - 만약 해당 날짜에 예약가능한 객실 타입이 없다면 예약불가 여부와 함께 호텔 정보만을 반환한다
      */
     @GetMapping("")
-    public ResponseEntity<List<HotelSimpleResponseDto>> hotelSimples(@RequestParam LocalDate date){
+    public ResponseEntity<List<HotelSimpleResponseDto>> hotelSimples(
+            @RequestParam LocalDate date,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
 
-        List<HotelSimpleResponseDto> responses = hotelService.getHotelInfo(date);
+        List<HotelSimpleResponseDto> responses = hotelService.getHotelInfo(date, page, size);
         return ResponseEntity.ok(responses);
     }
 
