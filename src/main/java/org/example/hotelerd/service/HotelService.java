@@ -21,6 +21,8 @@ import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
