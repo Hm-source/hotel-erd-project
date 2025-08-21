@@ -2,20 +2,20 @@ package org.example.hotelerd.controller.hotel;
 
 
 import java.time.LocalDate;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.hotelerd.controller.hotel.dto.HotelDetailResponseDto;
 import org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto;
 import org.example.hotelerd.service.HotelService;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-
-import org.springframework.data.domain.Page;
 
 @RestController
 @RequiredArgsConstructor
@@ -36,9 +36,9 @@ public class HotelController {
      */
     @GetMapping("")
     public ResponseEntity<List<HotelSimpleResponseDto>> hotelSimples(
-            @RequestParam LocalDate date,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+        @RequestParam LocalDate date,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size) {
 
         // 서비스 메서드의 반환 타입은 Page<...>
         Page<HotelSimpleResponseDto> responsesPage = hotelService.getHotelInfo(date, page, size);
