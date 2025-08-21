@@ -32,15 +32,11 @@ public class RoomDatePrice {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "reservation_id")
-//    private Reservation reservation;
-
+    
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_type_id", nullable = false)
-
     private RoomType roomType;
+
     private LocalDate dateAvailable;
     private Integer price;
     private Integer quantity;
