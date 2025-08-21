@@ -2,12 +2,16 @@ package org.example.hotelerd.service;
 
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import lombok.extern.slf4j.Slf4j;
 import org.example.hotelerd.controller.hotel.dto.HotelDetailResponseDto;
+import org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto;
 import org.example.hotelerd.controller.hotel.dto.RoomAvailabilityInfoDto;
 import org.example.hotelerd.repository.hotel.HotelRepository;
 import org.example.hotelerd.repository.hotel.RoomDatePriceRepository;
@@ -27,6 +31,36 @@ public class HotelService {
     HotelRepository hotelRepository;
     RoomTypeRepository roomTypeRepository;
     RoomDatePriceRepository roomDatePriceRepository;
+
+
+
+
+
+    @Transactional(readOnly = true)
+    public HotelSimpleResponseDto getHotelInfo(Integer hotelId, LocalDate checkDate){
+        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() ->
+                new RuntimeException("호텔 ID:" + hotelId + "가 존재하지 않습니다."));
+
+        Optional<RoomDatePrice> cheapestRoomDatePrice = roomDatePriceRepository.findCheapestAvailableRoom(hotelId);
+
+        Integer cheapestRoomPrice = null;
+        String cheapRoomTypeName = null;
+
+        if (cheapestRoomDatePrice.isPresent()) {
+            // roomType 객체를 얻고, 그 객체에서 ID와 이름을 가져옴
+            RoomType roomType = cheapestRoomDatePrice.get().getRoomType();
+
+            cheapestRoomPrice = cheapestRoomDatePrice.get().getPrice();
+            cheapRoomTypeName = roomType.getType();
+
+        }
+
+        return HotelSimpleResponseDto.from(hotel, checkDate, cheapestRoomPrice, cheapRoomTypeName);
+    }
+
+
+
+
 
     @Transactional(readOnly = true)
     public HotelDetailResponseDto getHotelDetail(Integer hotelId, LocalDate checkDate) {

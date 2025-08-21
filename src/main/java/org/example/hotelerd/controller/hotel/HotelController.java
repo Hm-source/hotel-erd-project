@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.example.hotelerd.controller.hotel.dto.HotelDetailResponseDto;
+import org.example.hotelerd.controller.hotel.dto.HotelSimpleResponseDto;
 import org.example.hotelerd.service.HotelService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,6 +22,23 @@ import org.springframework.web.bind.annotation.RestController;
 public class HotelController {
 
     HotelService hotelService;
+
+
+    /*
+    - 전체 호텔 간단 정보 조회 API - 박민진
+    - 요청 : 날짜
+    - 반환 : 호텔의 간단한 정보만을 리스트로 반환한다
+        - 각 호텔마다 어떤 객실타입들이 있는지 줄줄히 나열하지 않고
+        - 해당 날짜에 예약가능한 가장 저렴한 객실타입과 가격 1개만을 함께 반환한다
+            - 만약 해당 날짜에 예약가능한 객실 타입이 없다면 예약불가 여부와 함께 호텔 정보만을 반환한다
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<HotelSimpleResponseDto> hotelSimples(@PathVariable Integer id,
+                                                               @RequestParam LocalDate date){
+
+        HotelSimpleResponseDto response = hotelService.getHotelInfo(id, date);
+        return ResponseEntity.ok(response);
+    }
 
     /*
     - 단일 호텔 상세 정보 조회 API - 김효민
