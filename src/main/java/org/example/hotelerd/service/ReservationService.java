@@ -61,10 +61,22 @@ public class ReservationService {
             .roomDatePrice(roomInventory)
             .status(ReservationStatus.CONFIRMED)
             .totalPrice(roomInventory.getSeason() == null ? roomInventory.getPrice()
-                : roomInventory.getPrice() * roomInventory.getSeason().getDiscountRate())
+                : calculateTotalPrice(roomInventory))
             .build();
         reservationRepository.save(reservation);
 
         return ReservationResponseDto.from(reservation);
+    }
+
+
+    private Integer calculateTotalPrice(RoomDatePrice roomInventory) {
+        Integer basePrice = roomInventory.getPrice();
+
+        if (roomInventory.getSeason() == null) {
+            return basePrice;
+        } else {
+            Integer discountRate = roomInventory.getSeason().getDiscountRate();
+            return basePrice / 100 * discountRate;
+        }
     }
 }
