@@ -11,6 +11,7 @@ import org.example.hotelerd.repository.hotel.entity.Hotel;
 import org.example.hotelerd.repository.hotel.entity.Room;
 import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
+import org.example.hotelerd.repository.hotel.entity.Season;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -41,24 +42,30 @@ public class DataInitializer {
             // 1. 호텔 데이터 생성
             List<Hotel> hotels = createHotels();
             hotels.forEach(entityManager::persist);
-            entityManager.flush(); // 호텔 ID 생성을 위해 flush
+            entityManager.flush();
 
-            // 2. 객실타입 데이터 생성
+            // 2. 시즌 데이터 생성
+            List<Season> seasons = createSeasons(hotels);
+            seasons.forEach(entityManager::persist);
+            entityManager.flush();
+
+            // 3. 객실타입 데이터 생성
             List<RoomType> roomTypes = createRoomTypes(hotels);
             roomTypes.forEach(entityManager::persist);
-            entityManager.flush(); // 객실타입 ID 생성을 위해 flush
+            entityManager.flush();
 
-            // 3. 방 데이터 생성
+            // 4. 방 데이터 생성
             List<Room> rooms = createRooms(roomTypes);
             rooms.forEach(entityManager::persist);
             entityManager.flush();
 
-            // 4. 가격 데이터 생성 (quantity 계산 포함)
-            List<RoomDatePrice> roomDatePrices = createRoomDatePrices(roomTypes, rooms);
+            // 5. 가격 데이터 생성 (시즌 정보 포함)
+            List<RoomDatePrice> roomDatePrices = createRoomDatePrices(roomTypes, rooms, seasons);
             roomDatePrices.forEach(entityManager::persist);
 
-            log.info("데이터 초기화 완료 - 호텔: {}개, 객실타입: {}개, 방: {}개, 가격정보: {}개",
-                hotels.size(), roomTypes.size(), rooms.size(), roomDatePrices.size());
+            log.info("데이터 초기화 완료 - 호텔: {}개, 시즌: {}개, 객실타입: {}개, 방: {}개, 가격정보: {}개",
+                hotels.size(), seasons.size(), roomTypes.size(), rooms.size(),
+                roomDatePrices.size());
 
         } catch (Exception e) {
             log.error("데이터 초기화 중 오류 발생", e);
@@ -79,6 +86,56 @@ public class DataInitializer {
             new Hotel(null, "대구 시티 호텔", "대구시 수성구 동대구로 123",
                 LocalTime.of(15, 0), LocalTime.of(11, 0), new ArrayList<>())
         );
+    }
+
+    private List<Season> createSeasons(List<Hotel> hotels) {
+        List<Season> seasons = new ArrayList<>();
+        LocalDate currentYear = LocalDate.now();
+        int year = currentYear.getYear();
+
+        // 각 호텔마다 시즌 정보 생성
+        for (Hotel hotel : hotels) {
+            // 여름 성수기 (7-8월) - 50% 할증
+            seasons.add(new Season(null,
+                LocalDate.of(year, 7, 1),
+                LocalDate.of(year, 8, 31),
+                "여름성수기",
+                150, // 150% = 50% 할증
+                hotel));
+
+            // 겨울 성수기 (12-2월) - 30% 할증
+            seasons.add(new Season(null,
+                LocalDate.of(year, 12, 1),
+                LocalDate.of(year, 12, 31),
+                "겨울성수기",
+                130, // 130% = 30% 할증
+                hotel));
+
+            seasons.add(new Season(null,
+                LocalDate.of(year + 1, 1, 1),
+                LocalDate.of(year + 1, 2, 28),
+                "겨울성수기",
+                130,
+                hotel));
+
+            // 연휴 시즌 (크리스마스) - 40% 할증
+            seasons.add(new Season(null,
+                LocalDate.of(year, 12, 24),
+                LocalDate.of(year, 12, 26),
+                "크리스마스",
+                140, // 140% = 40% 할증
+                hotel));
+
+            // 신정 연휴 - 40% 할증
+            seasons.add(new Season(null,
+                LocalDate.of(year + 1, 1, 1),
+                LocalDate.of(year + 1, 1, 3),
+                "신정연휴",
+                140,
+                hotel));
+        }
+
+        return seasons;
     }
 
     private List<RoomType> createRoomTypes(List<Hotel> hotels) {
@@ -110,10 +167,10 @@ public class DataInitializer {
 
     private List<Room> createRooms(List<RoomType> roomTypes) {
         List<Room> rooms = new ArrayList<>();
-        int roomNumber = 101; // 시작 호실 번호
+        int roomNumber = 101;
 
-        // 각 객실타입별 방 개수 설정
-        int[] roomCounts = {0, 3, 2, 4, 3, 2, 4, 3, 1, 4, 0, 5, 3};
+        // 각 객실타입별 방 개수 설정 (일부 객실타입은 0개로 설정하여 예약 불가 상태 테스트)
+        int[] roomCounts = {0, 3, 2, 4, 3, 2, 4, 3, 1, 4, 2, 0, 3}; // 이코노미는 0개
 
         for (int i = 0; i < roomTypes.size(); i++) {
             RoomType roomType = roomTypes.get(i);
@@ -130,13 +187,13 @@ public class DataInitializer {
         return rooms;
     }
 
-    private List<RoomDatePrice> createRoomDatePrices(List<RoomType> roomTypes, List<Room> rooms) {
-        LocalDate startDate = LocalDate.now().plusDays(1); // 내일부터
-        LocalDate endDate = startDate.plusDays(60); // 60일간
+    private List<RoomDatePrice> createRoomDatePrices(List<RoomType> roomTypes, List<Room> rooms,
+        List<Season> seasons) {
+        LocalDate startDate = LocalDate.now().plusDays(1);
+        LocalDate endDate = startDate.plusDays(60);
 
         List<RoomDatePrice> prices = new ArrayList<>();
 
-        // 각 객실타입별 방 개수 계산
         for (RoomType roomType : roomTypes) {
             // 해당 객실타입의 방 개수 계산
             long roomCount = rooms.stream()
@@ -146,11 +203,15 @@ public class DataInitializer {
             for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                 Integer basePrice = getBasePriceForRoomType(roomType);
 
-                // 시즌가 적용
-                Integer finalPrice = applySeasonalPricing(basePrice, date);
+                // 해당 날짜의 시즌 찾기
+                Season applicableSeason = findApplicableSeason(seasons, roomType.getHotel(), date);
 
-                // quantity는 해당 객실타입의 총 방 개수
-                prices.add(new RoomDatePrice(null, roomType, date, finalPrice, (int) roomCount));
+                // 시즌가 적용
+                Integer finalPrice = applySeasonalPricing(basePrice, date, applicableSeason);
+
+                // RoomDatePrice 생성 (시즌 정보 포함)
+                prices.add(new RoomDatePrice(null, roomType, date, finalPrice, (int) roomCount,
+                    applicableSeason));
             }
 
             log.debug("{}의 {} 객실타입: {}개 방, 60일간 가격 정보 생성",
@@ -158,6 +219,33 @@ public class DataInitializer {
         }
 
         return prices;
+    }
+
+    /**
+     * 특정 날짜에 적용되는 시즌 찾기
+     */
+    private Season findApplicableSeason(List<Season> seasons, Hotel hotel, LocalDate date) {
+        return seasons.stream()
+            .filter(season -> season.getHotel().getId().equals(hotel.getId()))
+            .filter(season -> !date.isBefore(season.getStartDate()) && !date.isAfter(
+                season.getEndDate()))
+            .findFirst()
+            .orElse(null);
+    }
+
+    /**
+     * 시즌가 적용 (Season 엔티티 활용)
+     */
+    private Integer applySeasonalPricing(Integer basePrice, LocalDate date, Season season) {
+        double multiplier = 1.0;
+
+        // Season 엔티티의 할증률 적용
+        if (season != null) {
+            multiplier = season.getDiscountRate() / 100.0;
+            log.trace("시즌 할증 적용: {} - {} ({}%)", date, season.getName(), season.getDiscountRate());
+        }
+
+        return (int) (basePrice * multiplier);
     }
 
     private Integer getBasePriceForRoomType(RoomType roomType) {
@@ -199,38 +287,6 @@ public class DataInitializer {
             };
         }
 
-        return 100000; // 기본값
-    }
-
-    /**
-     * 시즌가 및 특별가격 적용
-     */
-    private Integer applySeasonalPricing(Integer basePrice, LocalDate date) {
-        double multiplier = 1.0;
-
-        // 성수기 적용 (여름: 7-8월, 겨울: 12-2월)
-        int month = date.getMonthValue();
-        if (month == 7 || month == 8) {
-            multiplier *= 1.5; // 여름 성수기 50% 할증
-            log.trace("여름 성수기 적용: {}", date);
-        } else if (month == 12 || month == 1 || month == 2) {
-            multiplier *= 1.3; // 겨울 성수기 30% 할증
-            log.trace("겨울 성수기 적용: {}", date);
-        }
-
-        // 주말 할증 (금, 토, 일)
-        if (date.getDayOfWeek().getValue() >= 5) {
-            multiplier *= 1.2; // 주말 20% 할증
-            log.trace("주말 할증 적용: {}", date);
-        }
-
-        // 연휴 할증 (크리스마스, 신정)
-        if ((month == 12 && date.getDayOfMonth() >= 24) ||
-            (month == 1 && date.getDayOfMonth() <= 3)) {
-            multiplier *= 1.4; // 연휴 40% 할증
-            log.trace("연휴 할증 적용: {}", date);
-        }
-
-        return (int) (basePrice * multiplier);
+        return 100000;
     }
 }
