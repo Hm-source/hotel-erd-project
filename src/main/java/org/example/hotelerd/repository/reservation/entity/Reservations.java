@@ -30,7 +30,7 @@ public class Reservations {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
@@ -48,7 +48,7 @@ public class Reservations {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "room_date_price_id", nullable = false)
-    private RoomDatePrice roomDataPrice;
+    private RoomDatePrice roomDatePrice;
 
 
     @Column(nullable = false)
