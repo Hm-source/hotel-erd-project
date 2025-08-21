@@ -21,7 +21,7 @@ public class ReservationResponseDto {
 
     public static ReservationResponseDto fromEntity(Reservation reservation) {
         return new ReservationResponseDto(
-                reservation.getReservation(),
+                reservation.getReservationId(),
                 reservation.getRoomType().getHotel().getName(),
                 reservation.getRoomType().getName(),
                 reservation.getUser().getUsername(),
