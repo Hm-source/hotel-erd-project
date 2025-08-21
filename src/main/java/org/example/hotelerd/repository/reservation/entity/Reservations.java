@@ -17,6 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.example.hotelerd.repository.hotel.entity.Room;
+import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.example.hotelerd.repository.user.entity.Users;
 
@@ -45,12 +46,17 @@ public class Reservations {
     @JoinColumn(name = "room_id")
     private Room room;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "room_date_price_id", nullable = false)
+    private RoomDatePrice roomDataPrice;
+
+
     @Column(nullable = false)
     private Integer totalPrice;
 
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
-    
+
     private Integer numOfGuests;
     private String specialRequests;
 }
