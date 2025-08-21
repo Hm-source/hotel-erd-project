@@ -52,7 +52,7 @@ public class HotelService {
         List<RoomAvailabilityInfoDto> roomAvailabilityInfoDtos = roomDatePrices.stream()
             .map(room -> {
                 if (room.getQuantity() == 0) {
-                    return RoomAvailabilityInfoDto.unavailable(room.getRoomType());
+                    return RoomAvailabilityInfoDto.unavailable(room.getRoomType(), room);
                 } else {
                     return RoomAvailabilityInfoDto.available(room.getRoomType(), room);
                 }
