@@ -1,4 +1,4 @@
-package org.example.hotelerd.repository.reservation.entity;
+package org.example.hotelerd.repository.entity;
 
 import org.example.hotelerd.repository.room.entity.Room;
 import org.example.hotelerd.repository.room.entity.RoomType;
