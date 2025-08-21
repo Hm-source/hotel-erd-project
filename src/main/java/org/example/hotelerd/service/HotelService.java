@@ -36,25 +36,26 @@ public class HotelService {
 
 
     @Transactional(readOnly = true)
-    public HotelSimpleResponseDto getHotelInfo(Integer hotelId, LocalDate checkDate){
-        Hotel hotel = hotelRepository.findById(hotelId).orElseThrow(() ->
-                new RuntimeException("호텔 ID:" + hotelId + "가 존재하지 않습니다."));
+    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate) {
+        List<Hotel> hotels = hotelRepository.findAll();
 
-        Optional<RoomDatePrice> cheapestRoomDatePrice = roomDatePriceRepository.findCheapestAvailableRoom(hotelId);
+        return hotels.stream()
+                .map(hotel -> {
+                    // findCheapestAvailableRoom 메서드에 hotelId 전달
+                    Optional<RoomDatePrice> cheapestRoomDatePrice = roomDatePriceRepository.findCheapestAvailableRoom(hotel.getId());
 
-        Integer cheapestRoomPrice = null;
-        String cheapRoomTypeName = null;
+                    Integer cheapestRoomPrice = null;
+                    String cheapRoomTypeName = null;
 
-        if (cheapestRoomDatePrice.isPresent()) {
-            // roomType 객체를 얻고, 그 객체에서 ID와 이름을 가져옴
-            RoomType roomType = cheapestRoomDatePrice.get().getRoomType();
+                    if (cheapestRoomDatePrice.isPresent()) {
+                        RoomType roomType = cheapestRoomDatePrice.get().getRoomType();
+                        cheapestRoomPrice = cheapestRoomDatePrice.get().getPrice();
+                        cheapRoomTypeName = roomType.getType(); 
+                    }
 
-            cheapestRoomPrice = cheapestRoomDatePrice.get().getPrice();
-            cheapRoomTypeName = roomType.getType();
-
-        }
-
-        return HotelSimpleResponseDto.from(hotel, checkDate, cheapestRoomPrice, cheapRoomTypeName);
+                    return HotelSimpleResponseDto.from(hotel, checkDate, cheapestRoomPrice, cheapRoomTypeName);
+                })
+                .collect(Collectors.toList());
     }
 
 
