@@ -22,6 +22,7 @@ public class ReservationResponseDto {
     private LocalTime checkOutTime;
     private Integer totalPrice;
     private String userName;
+    private Integer userId;
     private ReservationStatus status;
 
     public static ReservationResponseDto from(Reservations reservation) {
@@ -33,6 +34,9 @@ public class ReservationResponseDto {
             .checkOutTime(reservation.getRoomType().getHotel().getCheckOutTime())
             .totalPrice(reservation.getTotalPrice())
             .userName(reservation.getUser().getName())
+            .userId(reservation.getUser().getId())
+            .status(reservation.getStatus())
+            .reservationDate(reservation.getRoomDatePrice().getDateAvailable())
             .build();
     }
 }
