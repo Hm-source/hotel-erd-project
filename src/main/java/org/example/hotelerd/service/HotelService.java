@@ -19,6 +19,8 @@ import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 
 @Service
@@ -35,7 +37,7 @@ public class HotelService {
 
 
     @Transactional(readOnly = true)
-    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
+    public Page<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         return roomDatePriceRepository.findAllCheapestHotelInfo(checkDate, pageable);
     }

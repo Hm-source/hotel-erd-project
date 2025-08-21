@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.data.domain.Page;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/hotels")
@@ -38,7 +40,10 @@ public class HotelController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
 
-        List<HotelSimpleResponseDto> responses = hotelService.getHotelInfo(date, page, size);
+        // 서비스 메서드의 반환 타입은 Page<...>
+        Page<HotelSimpleResponseDto> responsesPage = hotelService.getHotelInfo(date, page, size);
+        // Page에서 List를 추출하여 반환
+        List<HotelSimpleResponseDto> responses = responsesPage.getContent();
         return ResponseEntity.ok(responses);
     }
 
