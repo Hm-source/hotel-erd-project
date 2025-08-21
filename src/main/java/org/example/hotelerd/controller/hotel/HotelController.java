@@ -32,14 +32,12 @@ public class HotelController {
         - 해당 날짜에 예약가능한 가장 저렴한 객실타입과 가격 1개만을 함께 반환한다
             - 만약 해당 날짜에 예약가능한 객실 타입이 없다면 예약불가 여부와 함께 호텔 정보만을 반환한다
      */
-    @GetMapping("")
-    public ResponseEntity<List<HotelSimpleResponseDto>> hotelSimples(
-            @RequestParam LocalDate date,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+    @GetMapping("/{id}")
+    public ResponseEntity<HotelSimpleResponseDto> hotelSimples(@PathVariable Integer id,
+                                                               @RequestParam LocalDate date){
 
-        List<HotelSimpleResponseDto> responses = hotelService.getHotelInfo(date, page, size);
-        return ResponseEntity.ok(responses);
+        HotelSimpleResponseDto response = hotelService.getHotelInfo(id, date);
+        return ResponseEntity.ok(response);
     }
 
     /*
