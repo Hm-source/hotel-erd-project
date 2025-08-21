@@ -44,4 +44,15 @@ public class RoomDatePrice {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "season_id")
     private Season season;
+
+    public void decreaseQuantity() {
+        if (this.quantity <= 0) {
+            throw new IllegalStateException("재고가 부족합니다.");
+        }
+        this.quantity--;
+    }
+
+    public void increaseQuantity() {
+        this.quantity++;
+    }
 }

@@ -1,28 +1,51 @@
 package org.example.hotelerd.service;
 
+import java.time.LocalDate;
+import java.util.NoSuchElementException;
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import org.example.hotelerd.controller.reservation.dto.ReservationCancelResponseDto;
+import org.example.hotelerd.controller.reservation.dto.ReservationRequestDto;
+import org.example.hotelerd.controller.reservation.dto.ReservationResponseDto;
+import org.example.hotelerd.repository.hotel.RoomDatePriceRepository;
+import org.example.hotelerd.repository.hotel.RoomTypeRepository;
+import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
+import org.example.hotelerd.repository.hotel.entity.RoomType;
+import org.example.hotelerd.repository.reservation.ReservationRepository;
+import org.example.hotelerd.repository.reservation.entity.ReservationStatus;
+import org.example.hotelerd.repository.reservation.entity.Reservations;
+import org.example.hotelerd.repository.user.UserRepository;
+import org.example.hotelerd.repository.user.entity.Users;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
+@FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
 public class ReservationService {
-    private final UserRepository userRepository;
-    private final UserRepository roomTypeRepository;
-    private final RoomDatePriceRepository roomDatePriceRepository;
-    private final ReservationRepository reservationRepository;
+
+    UserRepository userRepository;
+    RoomTypeRepository roomTypeRepository;
+    RoomDatePriceRepository roomDatePriceRepository;
+    ReservationRepository reservationRepository;
 
     @Transactional
     public ReservationResponseDto createReservation(ReservationRequestDto requestDto) {
         // 유저 및 객실 타입 정보 조회
-        User user = userRepository.findById(requestDto.userId())
-                .orElseThrow(() -> new EntityNotFoundException("해당 유저를 찾을 수 없음" + requestDto.userId()));
-        RoomType roomType = roomTypeRepository.findById(requestDto.roomTypeId())
-                .orElseThrow(() -> new EntityNotFoundException("해당 객실 타입을 찾을 수 없음." + requestDto.roomTypeId()));
+        Users user = userRepository.findById(requestDto.getUserId())
+            .orElseThrow(
+                () -> new NoSuchElementException("해당 유저를 찾을 수 없음" + requestDto.getUserId()));
+        RoomType roomType = roomTypeRepository.findById(requestDto.getRoomTypeId())
+            .orElseThrow(
+                () -> new NoSuchElementException(
+                    "해당 객실 타입을 찾을 수 없음." + requestDto.getRoomTypeId()));
 
         // 해당 날짜의 객실 재고 정보 조회 및 확인
-        RoomDatePrice roomInventory = roomDatePriceRepository.findByRoomTypeAndDate(roomType, requestDto.stayDate())
-                .orElseThrow(() -> new IllegalStateException("해당 날짜에 예약 가능한 상품이 없음."));
+        RoomDatePrice roomInventory = roomDatePriceRepository.findByRoomTypeIdAndDateAvailableWithLock(
+                roomType.getId(),
+                requestDto.getStayDate())
+            .orElseThrow(() -> new NoSuchElementException("해당 날짜에 예약 가능한 상품이 없음."));
 
         if (roomInventory.getQuantity() <= 0) {
             throw new IllegalStateException("해당 객실은 모두 예약되었음.");
@@ -33,17 +56,64 @@ public class ReservationService {
         roomDatePriceRepository.save(roomInventory);
 
         // 예약 정보
-        Reservations newReservation = Reservations.builder()
-                .user(user)
-                .roomType(roomType)
-                .room(null)         // 방은 아직 배정 되지 않아서 null
-                .checkIn(requestDto.stayDate())
-                .checkOut(requestDto.stayDate().plusDays(1))
-                .status(ReservationStatus.CONFIRMED.name())
-                .totalPrice(roomInventory.getPrice().intValue())
-                .build();
-        reservationRepository.save(newReservation);
+        Reservations reservation = Reservations.builder()
+            .user(user)
+            .roomType(roomType)
+            .room(null)
+            .roomDatePrice(roomInventory)
+            .status(ReservationStatus.CONFIRMED)
+            .totalPrice(roomInventory.getSeason() == null ? roomInventory.getPrice()
+                : calculateTotalPrice(roomInventory))
+            .build();
+        reservationRepository.save(reservation);
 
-        return ReservationResponseDto.fromEntity(newReservation);
+        return ReservationResponseDto.from(reservation);
+    }
+
+    @Transactional
+    public ReservationCancelResponseDto cancelReservation(Integer reservationId, Integer userId) {
+        Reservations reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(
+                () -> new NoSuchElementException("해당 예약을 찾을 수 없습니다. 예약ID: " + reservationId));
+
+        Users user = userRepository.findById(userId)
+            .orElseThrow(() -> new NoSuchElementException("해당 사용자를 찾을 수 없습니다. userId : " + userId));
+
+        if (!reservation.getUser().getId().equals(user.getId())) {
+            throw new IllegalArgumentException("해당 예약을 취소할 권한이 없습니다.");
+        }
+
+        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
+            throw new IllegalStateException("이미 취소된 예약입니다.");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate reservationDate = reservation.getRoomDatePrice().getDateAvailable();
+
+        if (reservationDate.isBefore(today) || reservationDate.isEqual(today)) {
+            throw new IllegalStateException("당일 또는 지난 예약은 취소할 수 없습니다.");
+        }
+
+        RoomDatePrice roomDatePrice = roomDatePriceRepository
+            .findByRoomTypeIdAndDateAvailableWithLock(
+                reservation.getRoomType().getId(),
+                reservationDate)
+            .orElseThrow(() -> new NoSuchElementException("재고 정보를 찾을 수 없습니다."));
+
+        reservation.cancel();
+        roomDatePrice.increaseQuantity();
+
+        return ReservationCancelResponseDto.from(reservation);
+    }
+
+    private Integer calculateTotalPrice(RoomDatePrice roomInventory) {
+        Integer basePrice = roomInventory.getPrice();
+
+        if (roomInventory.getSeason() == null) {
+            return basePrice;
+        } else {
+            Integer discountRate = roomInventory.getSeason().getDiscountRate();
+            return basePrice / 100 * discountRate;
+        }
     }
 }

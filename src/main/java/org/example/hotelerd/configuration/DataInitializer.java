@@ -2,6 +2,7 @@ package org.example.hotelerd.configuration;
 
 import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.example.hotelerd.repository.hotel.entity.Room;
 import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
 import org.example.hotelerd.repository.hotel.entity.Season;
+import org.example.hotelerd.repository.user.entity.Users;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -39,6 +41,11 @@ public class DataInitializer {
         }
 
         try {
+            // 0. 유저 데이터 생성 (새로 추가)
+            List<Users> users = createUsers();
+            users.forEach(entityManager::persist);
+            entityManager.flush();
+
             // 1. 호텔 데이터 생성
             List<Hotel> hotels = createHotels();
             hotels.forEach(entityManager::persist);
@@ -63,9 +70,12 @@ public class DataInitializer {
             List<RoomDatePrice> roomDatePrices = createRoomDatePrices(roomTypes, rooms, seasons);
             roomDatePrices.forEach(entityManager::persist);
 
-            log.info("데이터 초기화 완료 - 호텔: {}개, 시즌: {}개, 객실타입: {}개, 방: {}개, 가격정보: {}개",
-                hotels.size(), seasons.size(), roomTypes.size(), rooms.size(),
+            log.info("데이터 초기화 완료 - 유저: {}명, 호텔: {}개, 시즌: {}개, 객실타입: {}개, 방: {}개, 가격정보: {}개",
+                users.size(), hotels.size(), seasons.size(), roomTypes.size(), rooms.size(),
                 roomDatePrices.size());
+
+            // 테스트용 정보 출력
+            printTestInfo(users, hotels, roomTypes);
 
         } catch (Exception e) {
             log.error("데이터 초기화 중 오류 발생", e);
@@ -73,6 +83,22 @@ public class DataInitializer {
         }
     }
 
+    // 새로 추가: 유저 데이터 생성
+    private List<Users> createUsers() {
+        return List.of(
+            new Users(null, "김철수", "010-1234-5678", "kim@example.com", LocalDateTime.now(),
+                new ArrayList<>()),
+            new Users(null, "이영희", "010-2345-6789", "lee@example.com", LocalDateTime.now(),
+                new ArrayList<>()),
+            new Users(null, "박민수", "010-3456-7890", "park@example.com", LocalDateTime.now(),
+                new ArrayList<>()),
+            new Users(null, "최지은", "010-4567-8901", "choi@example.com", LocalDateTime.now(),
+                new ArrayList<>()),
+            new Users(null, "정현우", "010-5678-9012", "jung@example.com", LocalDateTime.now(),
+                new ArrayList<>())
+        );
+    }
+    
     private List<Hotel> createHotels() {
         return List.of(
             new Hotel(null, "그랜드 서울 호텔", "서울시 중구 을지로 176",
@@ -169,8 +195,8 @@ public class DataInitializer {
         List<Room> rooms = new ArrayList<>();
         int roomNumber = 101;
 
-        // 각 객실타입별 방 개수 설정 (일부 객실타입은 0개로 설정하여 예약 불가 상태 테스트)
-        int[] roomCounts = {0, 3, 2, 4, 3, 2, 4, 3, 1, 4, 2, 0, 3}; // 이코노미는 0개
+        // 각 객실타입별 방 개수 설정
+        int[] roomCounts = {3, 3, 2, 4, 3, 2, 4, 3, 1, 4, 2, 2, 3}; // 모든 타입에 방 배정
 
         for (int i = 0; i < roomTypes.size(); i++) {
             RoomType roomType = roomTypes.get(i);
@@ -221,9 +247,34 @@ public class DataInitializer {
         return prices;
     }
 
-    /**
-     * 특정 날짜에 적용되는 시즌 찾기
-     */
+    // 테스트용 정보 출력
+    private void printTestInfo(List<Users> users, List<Hotel> hotels, List<RoomType> roomTypes) {
+        log.info("=== 테스트용 정보 ===");
+
+        log.info("생성된 유저들:");
+        for (int i = 0; i < users.size(); i++) {
+            Users user = users.get(i);
+            log.info("  유저 ID: {}, 이름: {}, 이메일: {}", i + 1, user.getName(), user.getEmail());
+        }
+
+        log.info("생성된 호텔들:");
+        for (int i = 0; i < hotels.size(); i++) {
+            Hotel hotel = hotels.get(i);
+            log.info("  호텔 ID: {}, 이름: {}", i + 1, hotel.getName());
+        }
+
+        log.info("생성된 객실타입들:");
+        for (int i = 0; i < roomTypes.size(); i++) {
+            RoomType roomType = roomTypes.get(i);
+            log.info("  객실타입 ID: {}, 호텔: {}, 타입: {}",
+                i + 1, roomType.getHotel().getName(), roomType.getType());
+        }
+
+        LocalDate tomorrow = LocalDate.now().plusDays(1);
+        log.info("테스트 가능한 예약 날짜: {} (내일부터 60일간)", tomorrow);
+        log.info("==================");
+    }
+
     private Season findApplicableSeason(List<Season> seasons, Hotel hotel, LocalDate date) {
         return seasons.stream()
             .filter(season -> season.getHotel().getId().equals(hotel.getId()))
@@ -233,13 +284,9 @@ public class DataInitializer {
             .orElse(null);
     }
 
-    /**
-     * 시즌가 적용 (Season 엔티티 활용)
-     */
     private Integer applySeasonalPricing(Integer basePrice, LocalDate date, Season season) {
         double multiplier = 1.0;
 
-        // Season 엔티티의 할증률 적용
         if (season != null) {
             multiplier = season.getDiscountRate() / 100.0;
             log.trace("시즌 할증 적용: {} - {} ({}%)", date, season.getName(), season.getDiscountRate());
