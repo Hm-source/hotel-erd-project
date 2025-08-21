@@ -38,28 +38,9 @@ public class HotelService {
 
 
     @Transactional(readOnly = true)
-    public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate) {
     public List<HotelSimpleResponseDto> getHotelInfo(LocalDate checkDate, int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        List<Hotel> hotels = hotelRepository.findAll(pageable).getContent();
-
-        return hotels.stream()
-                .map(hotel -> {
-                    // findCheapestAvailableRoom 메서드에 hotelId 전달
-                    Optional<RoomDatePrice> cheapestRoomDatePrice = roomDatePriceRepository.findCheapestAvailableRoom(hotel.getId());
-
-                    Integer cheapestRoomPrice = null;
-                    String cheapRoomTypeName = null;
-
-                    if (cheapestRoomDatePrice.isPresent()) {
-                        RoomType roomType = cheapestRoomDatePrice.get().getRoomType();
-                        cheapestRoomPrice = cheapestRoomDatePrice.get().getPrice();
-                        cheapRoomTypeName = roomType.getType(); 
-                    }
-
-                    return HotelSimpleResponseDto.from(hotel, checkDate, cheapestRoomPrice, cheapRoomTypeName);
-                })
-                .collect(Collectors.toList());
+        return roomDatePriceRepository.findAllCheapestHotelInfoWithPaging(checkDate, pageable);
     }
 
 
