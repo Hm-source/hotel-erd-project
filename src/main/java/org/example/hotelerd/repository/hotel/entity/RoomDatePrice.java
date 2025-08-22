@@ -47,7 +47,7 @@ public class RoomDatePrice {
 
     public void decreaseQuantity() {
         if (this.quantity <= 0) {
-            throw new IllegalStateException("재고가 부족합니다.");
+            throw new IllegalStateException("해당 객실은 모두 예약되었습니다.");
         }
         this.quantity--;
     }

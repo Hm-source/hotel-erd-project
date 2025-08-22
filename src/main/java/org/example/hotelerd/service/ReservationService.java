@@ -46,11 +46,7 @@ public class ReservationService {
                 roomType.getId(),
                 requestDto.getStayDate())
             .orElseThrow(() -> new NoSuchElementException("해당 날짜에 예약 가능한 상품이 없음."));
-
-        if (roomInventory.getQuantity() <= 0) {
-            throw new IllegalStateException("해당 객실은 모두 예약되었음.");
-        }
-
+        
         // 예약 되면 재고 1개 감소
         roomInventory.decreaseQuantity();
         roomDatePriceRepository.save(roomInventory);

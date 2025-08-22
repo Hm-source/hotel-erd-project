@@ -40,12 +40,12 @@ public interface RoomDatePriceRepository extends JpaRepository<RoomDatePrice, In
     Page<HotelSimpleResponseDto> findAllCheapestHotelInfo(@Param("checkDate") LocalDate checkDate,
         Pageable pageable);
 
-    Optional<RoomDatePrice> findByRoomTypeIdAndDateAvailable(Long roomTypeId,
+    Optional<RoomDatePrice> findByRoomTypeIdAndDateAvailable(Integer roomTypeId,
         LocalDate dateAvailable);
 
     @Query("SELECT rdp FROM RoomDatePrice rdp WHERE rdp.roomType.id = :roomTypeId AND rdp.dateAvailable = :date")
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<RoomDatePrice> findByRoomTypeIdAndDateAvailableWithLock(
-        @Param("roomTypeId") Integer roomType_id,
+        @Param("roomTypeId") Integer roomTypeId,
         @Param("date") LocalDate dateAvailable);
 }
