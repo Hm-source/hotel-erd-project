@@ -11,11 +11,13 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 import org.example.hotelerd.repository.hotel.entity.Room;
 import org.example.hotelerd.repository.hotel.entity.RoomDatePrice;
 import org.example.hotelerd.repository.hotel.entity.RoomType;
@@ -25,6 +27,7 @@ import org.example.hotelerd.repository.user.entity.Users;
 @Getter
 @Builder
 @AllArgsConstructor
+@ToString
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Reservations {
 
@@ -62,5 +65,24 @@ public class Reservations {
 
     public void cancel() {
         this.status = ReservationStatus.CANCELLED;
+    }
+
+    public void validateCancelPermission(Integer userId) {
+        if (!this.user.getId().equals(userId)) {
+            throw new IllegalArgumentException("해당 예약을 취소할 권한이 없습니다.");
+        }
+    }
+
+    public void validateCancellable() {
+        if (this.status == ReservationStatus.CANCELLED) {
+            throw new IllegalStateException("이미 취소된 예약입니다.");
+        }
+
+        LocalDate today = LocalDate.now();
+        LocalDate reservationDate = this.roomDatePrice.getDateAvailable();
+
+        if (reservationDate.isBefore(today) || reservationDate.isEqual(today)) {
+            throw new IllegalStateException("당일 또는 지난 예약은 취소할 수 없습니다.");
+        }
     }
 }

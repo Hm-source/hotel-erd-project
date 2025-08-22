@@ -35,31 +35,28 @@ public class ReservationService {
         // 유저 및 객실 타입 정보 조회
         Users user = userRepository.findById(requestDto.getUserId())
             .orElseThrow(
-                () -> new NoSuchElementException("해당 유저를 찾을 수 없음" + requestDto.getUserId()));
+                () -> new NoSuchElementException(
+                    "해당 유저를 찾을 수 없습니다. userId : " + requestDto.getUserId()));
         RoomType roomType = roomTypeRepository.findById(requestDto.getRoomTypeId())
             .orElseThrow(
                 () -> new NoSuchElementException(
-                    "해당 객실 타입을 찾을 수 없음." + requestDto.getRoomTypeId()));
+                    "해당 객실 타입을 찾을 수 없습니다. roomTypeId : " + requestDto.getRoomTypeId()));
 
-        // 해당 날짜의 객실 재고 정보 조회 및 확인
         RoomDatePrice roomInventory = roomDatePriceRepository.findByRoomTypeIdAndDateAvailableWithLock(
                 roomType.getId(),
                 requestDto.getStayDate())
-            .orElseThrow(() -> new NoSuchElementException("해당 날짜에 예약 가능한 상품이 없음."));
-        
-        // 예약 되면 재고 1개 감소
-        roomInventory.decreaseQuantity();
-        roomDatePriceRepository.save(roomInventory);
+            .orElseThrow(() -> new NoSuchElementException(
+                "해당 날짜에 예약 가능한 상품이 없습니다. date : " + requestDto.getStayDate()));
 
-        // 예약 정보
+        roomInventory.decreaseQuantity();
+
         Reservations reservation = Reservations.builder()
             .user(user)
             .roomType(roomType)
             .room(null)
             .roomDatePrice(roomInventory)
             .status(ReservationStatus.CONFIRMED)
-            .totalPrice(roomInventory.getSeason() == null ? roomInventory.getPrice()
-                : calculateTotalPrice(roomInventory))
+            .totalPrice(calculateTotalPrice(roomInventory))
             .build();
         reservationRepository.save(reservation);
 
@@ -75,20 +72,10 @@ public class ReservationService {
         Users user = userRepository.findById(userId)
             .orElseThrow(() -> new NoSuchElementException("해당 사용자를 찾을 수 없습니다. userId : " + userId));
 
-        if (!reservation.getUser().getId().equals(user.getId())) {
-            throw new IllegalArgumentException("해당 예약을 취소할 권한이 없습니다.");
-        }
+        reservation.validateCancelPermission(user.getId());
+        reservation.validateCancellable();
 
-        if (reservation.getStatus() == ReservationStatus.CANCELLED) {
-            throw new IllegalStateException("이미 취소된 예약입니다.");
-        }
-
-        LocalDate today = LocalDate.now();
         LocalDate reservationDate = reservation.getRoomDatePrice().getDateAvailable();
-
-        if (reservationDate.isBefore(today) || reservationDate.isEqual(today)) {
-            throw new IllegalStateException("당일 또는 지난 예약은 취소할 수 없습니다.");
-        }
 
         RoomDatePrice roomDatePrice = roomDatePriceRepository
             .findByRoomTypeIdAndDateAvailableWithLock(
@@ -109,7 +96,7 @@ public class ReservationService {
             return basePrice;
         } else {
             Integer discountRate = roomInventory.getSeason().getDiscountRate();
-            return basePrice / 100 * discountRate;
+            return basePrice * discountRate / 100;
         }
     }
 }
