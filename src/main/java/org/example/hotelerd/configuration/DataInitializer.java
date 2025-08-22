@@ -98,7 +98,7 @@ public class DataInitializer {
                 new ArrayList<>())
         );
     }
-    
+
     private List<Hotel> createHotels() {
         return List.of(
             new Hotel(null, "그랜드 서울 호텔", "서울시 중구 을지로 176",
@@ -196,7 +196,7 @@ public class DataInitializer {
         int roomNumber = 101;
 
         // 각 객실타입별 방 개수 설정
-        int[] roomCounts = {3, 3, 2, 4, 3, 2, 4, 3, 1, 4, 2, 2, 3}; // 모든 타입에 방 배정
+        int[] roomCounts = {3, 0, 2, 0, 3, 2, 4, 3, 1, 4, 2, 2, 3}; // 모든 타입에 방 배정
 
         for (int i = 0; i < roomTypes.size(); i++) {
             RoomType roomType = roomTypes.get(i);
