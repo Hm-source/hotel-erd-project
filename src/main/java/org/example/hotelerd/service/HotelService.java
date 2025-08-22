@@ -3,6 +3,7 @@ package org.example.hotelerd.service;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
@@ -41,36 +42,28 @@ public class HotelService {
 
     @Transactional(readOnly = true)
     public HotelDetailResponseDto getHotelDetail(Integer hotelId, LocalDate checkDate) {
-        log.info("호텔 상세 정보 조회 시작 - hotelId: {}, checkDate: {}", hotelId, checkDate);
-
         Hotel hotel = hotelRepository.findById(hotelId)
             .orElseThrow(() -> new RuntimeException("호텔을 찾을 수 없습니다. hotelId: " + hotelId));
-        log.info("호텔 조회 완료:   - 호텔 ID: {} - 호텔명: {}", hotel.getId(), hotel.getName());
 
         List<RoomType> roomTypes = hotel.getRoomTypes();
-        for (int i = 0; i < roomTypes.size(); i++) {
-            RoomType rt = roomTypes.get(i);
-            log.info("  객실타입[{}]: ID={}, 타입={}, 설명={}",
-                i, rt.getId(), rt.getType(), rt.getDescription());
-        }
+
+        log.info(roomTypes.stream()
+            .map(RoomType::toString)
+            .collect(Collectors.joining(",\n ")));
+
         List<Integer> roomTypeIds = roomTypes.stream()
             .map(RoomType::getId)
             .toList();
-        log.info("추출된 객실타입 ID 목록: {}", roomTypeIds);
 
         List<RoomDatePrice> roomDatePrices = roomDatePriceRepository.findByRoomTypeIdsAndDate(
             roomTypeIds, checkDate);
 
-        log.info("RoomDatePrice 리스트 ({} 개):", roomDatePrices.size());
         List<RoomAvailabilityInfoDto> roomAvailabilityInfoDtos = roomDatePrices.stream()
             .map(room -> {
-                if (room.getQuantity() == 0) {
-                    return RoomAvailabilityInfoDto.unavailable(room.getRoomType(), room);
-                } else {
-                    return RoomAvailabilityInfoDto.available(room.getRoomType(), room);
-                }
+                return RoomAvailabilityInfoDto.of(room.getRoomType(), room);
             })
             .toList();
+
         return HotelDetailResponseDto.from(
             hotel,
             checkDate,

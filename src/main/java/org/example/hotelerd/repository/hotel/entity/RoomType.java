@@ -32,4 +32,10 @@ public class RoomType {
     private String description;
     private Integer standardNum;
     private Integer maxNum;
+
+    @Override
+    public String toString() {
+        return String.format("객실타입[ID=%d, 타입=%s, 설명=%s, 기준인원=%d, 최대인원=%d]",
+            id, type, description, standardNum, maxNum);
+    }
 }
